@@ -14,7 +14,7 @@ def predict_crop_image(image_path):
         input_arr = input_arr / 255.0
 
         prediction = model.predict(input_arr)
-        result = "Crop Image" if prediction[0][0] > 0.5 else "Not a Crop Image"
+        result = "Crop Image" if prediction[0][0] < 0.8 else "Not a Crop Image"
         return {"prediction": result, "confidence": float(prediction[0][0])}
     except Exception as e:
         return {"error": str(e)}

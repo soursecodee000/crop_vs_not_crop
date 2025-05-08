@@ -32,6 +32,6 @@ async def predict(file: UploadFile = File(...)):
     contents = await file.read()
     img_array = preprocess_image(contents)
     prediction = model.predict(img_array)[0][0]
-    label = "crop" if prediction >= 0.5 else "not_crop"
+    label = "crop" if prediction < 0.8 else "not_crop"
     confidence = float(prediction) if label == "crop" else float(1 - prediction)
     return {"label": label, "confidence": confidence}

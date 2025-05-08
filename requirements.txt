@@ -1,5 +1,6 @@
-Flask
+fastapi
+uvicorn
 tensorflow
+pillow
 numpy
-opencv-python
-gunicorn
+python-multipart

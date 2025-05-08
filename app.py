@@ -1,29 +1,37 @@
-from flask import Flask, request, jsonify
-from test import predict_crop_image
-import os
+from fastapi import FastAPI, File, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+import tensorflow as tf
+from PIL import Image
+import numpy as np
+import io
 
-app = Flask(__name__)
+app = FastAPI()
 
-@app.route('/')
-def home():
-    return "Crop Image Detection API is running."
+# Enable CORS (to allow requests from Flutter app)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.route('/predict', methods=['POST'])
-def predict():
-    if 'image' not in request.files:
-        return jsonify({"error": "No image file found"}), 400
+# Load the model
+model = tf.keras.models.load_model("crop_detector_model.keras")
 
-    image = request.files['image']
-    image_path = os.path.join("temp", image.filename)
-    os.makedirs("temp", exist_ok=True)
-    image.save(image_path)
+# Preprocess image
+def preprocess_image(image_bytes):
+    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    image = image.resize((128, 128))
+    image_array = np.array(image) / 255.0
+    image_array = np.expand_dims(image_array, axis=0)
+    return image_array
 
-    result = predict_crop_image(image_path)
-
-    # Clean up the saved image
-    os.remove(image_path)
-
-    return jsonify(result)
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+@app.post("/predict")
+async def predict(file: UploadFile = File(...)):
+    contents = await file.read()
+    img_array = preprocess_image(contents)
+    prediction = model.predict(img_array)[0][0]
+    label = "crop" if prediction >= 0.5 else "not_crop"
+    confidence = float(prediction) if label == "crop" else float(1 - prediction)
+    return {"label": label, "confidence": confidence}

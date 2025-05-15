@@ -1,6 +1,9 @@
 fastapi
 uvicorn
-tensorflow
-pillow
+tensorflow # Updated TensorFlow version
 numpy
+pillow
+requests
+opencv-python
+matplotlib
 python-multipart

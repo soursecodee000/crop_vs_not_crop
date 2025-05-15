@@ -1,20 +1,22 @@
-import numpy as np
-import tensorflow as tf
-import cv2
+import requests
 
-# Load your trained model once
-model = tf.keras.models.load_model('crop_detector_model.keras')
+# Replace with the path to the image you want to test
+image_path = 'path_to_your_image.jpg'  # Update this path to your image file
 
-def predict_crop_image(image_path):
-    try:
-        img = cv2.imread(image_path)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img_resized = cv2.resize(img, (128, 128))  # Match your model input size
-        input_arr = np.expand_dims(img_resized, axis=0)
-        input_arr = input_arr / 255.0
+# URL of your FastAPI model deployed on Render
+api_url = 'https://crop-disease-npbt.onrender.com/predict/'
 
-        prediction = model.predict(input_arr)
-        result = "Crop Image" if prediction[0][0] < 0.8 else "Not a Crop Image"
-        return {"prediction": result, "confidence": float(prediction[0][0])}
-    except Exception as e:
-        return {"error": str(e)}
+# Open the image file in binary mode
+with open(image_path, 'rb') as img_file:
+    # Prepare the image file to be sent as part of the request
+    files = {'file': ('image.jpg', img_file, 'image/jpeg')}
+    
+    # Send a POST request with the image file
+    response = requests.post(api_url, files=files)
+    
+    # Check if the request was successful (status code 200)
+    if response.status_code == 200:
+        result = response.json()  # Parse the response JSON
+        print(f"Prediction result: {result['prediction']}")  # Print the predicted disease
+    else:
+        print(f"Failed to get prediction. Status code: {response.status_code}")
